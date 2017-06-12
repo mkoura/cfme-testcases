@@ -11,7 +11,7 @@ setup(
     license='GPL',
     packages=find_packages(exclude=('tests',)),
     scripts=['cfme_testcases_upload.py'],
-    install_requires=['dump2polarion'],
+    install_requires=['pytest', 'dump2polarion'],
     keywords=['polarion', 'testing'],
     classifiers=[
         'Development Status :: 3 - Alpha',

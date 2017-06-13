@@ -13,6 +13,8 @@ import random
 import argparse
 import logging
 
+from xml.etree import ElementTree
+
 from dump2polarion.configuration import get_config
 from dump2polarion.submit import submit_and_verify
 
@@ -25,6 +27,10 @@ from cfme_testcases.gen_xmls import run_pytest
 logger = logging.getLogger(__name__)
 
 
+_TEST_RUN_XML = 'test_run_import.xml'
+_TEST_CASE_XML = 'test_case_import.xml'
+
+
 def get_args(args=None):
     """Get command line arguments."""
     parser = argparse.ArgumentParser(description='cfme-testcases')
@@ -34,6 +40,8 @@ def get_args(args=None):
                         help="Directory for saving generated XML files")
     parser.add_argument('-n', '--no-submit', action='store_true',
                         help="Don't submit generated XML files")
+    parser.add_argument('--testrun-init', action='store_true',
+                        help="Create and initialize new testrun")
     parser.add_argument('--user',
                         help="Username to use to submit to Polarion")
     parser.add_argument('--password',
@@ -43,7 +51,7 @@ def get_args(args=None):
     parser.add_argument('--testsuites',
                         help="Path to xunit XML file with testsuites")
     parser.add_argument('--dump2polarion-config',
-                        help="Path to config YAML")
+                        help="Path to dump2polarion config YAML")
     parser.add_argument('--msgbus-log',
                         help="Path to an existing message bus log file")
     parser.add_argument('--no-verify', action='store_true',
@@ -72,6 +80,27 @@ def write_xml(xml, filename):
     with open(filename, 'w') as xml_file:
         xml_file.write(xml)
     logger.info("Data written to '{}'".format(filename))
+
+
+def set_dry_run(xml_file):
+    """Sets dry-run so testrun is not updated, only log file is produced."""
+    try:
+        tree = ElementTree.parse(xml_file)
+        xml_root = tree.getroot()
+    # pylint: disable=broad-except
+    except Exception as err:
+        raise TestcasesException("Failed to parse XML file: {}".format(err))
+
+    properties = xml_root.find('properties')
+    for prop in properties:
+        if prop.get('name') == 'polarion-dry-run':
+            prop.set('value', 'true')
+            break
+    else:
+        ElementTree.SubElement(properties, 'property',
+                               {'name': 'polarion-dry-run', 'value': 'true'})
+
+    return ElementTree.tostring(xml_root, encoding='utf8')
 
 
 # pylint: disable=too-many-locals,too-many-return-statements,too-many-branches,too-many-statements
@@ -113,14 +142,18 @@ def main(args=None):
         msgbus_log = os.path.join(args.output_dir or 'log', msgbus_log)
         nargs = vars(args)
         nargs['msgbus_log'] = msgbus_log
-        if not submit_and_verify(
-                xml_file='test_run_import.xml', config=dump2polarion_config, **nargs):
+        if not args.testrun_init:
+            xml_input = set_dry_run(_TEST_RUN_XML)
+            nargs['xml_str'] = xml_input
+        else:
+            nargs['xml_file'] = _TEST_RUN_XML
+        if not submit_and_verify(config=dump2polarion_config, **nargs):
             logger.fatal("Failed to submit testrun")
             return 1
 
     # filter testcases based on message bus log
-    testcases = args.testcases or 'test_case_import.xml'
-    testsuites = args.testsuites or 'test_run_import.xml'
+    testcases = args.testcases or _TEST_CASE_XML
+    testsuites = args.testsuites or _TEST_RUN_XML
     try:
         filtered_testcases, filtered_testsuites = get_filtered_xmls(
             testcases, testsuites, msgbus_log)

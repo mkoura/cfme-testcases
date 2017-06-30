@@ -63,6 +63,7 @@ def run_pytest(testrun_id):
         '--collect-only',
         '--long-running',
         '--use-provider', 'complete',
+        '--xmls-apply-blacklist',
         '--generate-legacy-xmls',
         '--xmls-testrun-id',
         str(testrun_id)

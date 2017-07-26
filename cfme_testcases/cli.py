@@ -115,7 +115,7 @@ def main(args=None):
     init_log(args.log_level)
 
     dump2polarion_config = get_config(
-        args.dump2polarion_config, args=vars(args)) if args.dump2polarion_config else None
+        args.dump2polarion_config) if args.dump2polarion_config else None
 
     # if the XML files were not specified on command line, generate them using pytest
     if not(args.testcases and args.testsuites):
@@ -138,9 +138,10 @@ def main(args=None):
             "there's nothing more to do")
         return 0
     else:
+        nargs = {}
+        nargs.update(vars(args))
         msgbus_log = 'msgbus-testrun-init-{}.log'.format(_get_filename_str())
-        msgbus_log = os.path.join(args.output_dir or 'log', msgbus_log)
-        nargs = vars(args)
+        msgbus_log = os.path.join(args.output_dir or '', msgbus_log)
         nargs['msgbus_log'] = msgbus_log
         if not args.testrun_init:
             xml_input = set_dry_run(_TEST_RUN_XML)
@@ -179,17 +180,22 @@ def main(args=None):
 
     # create missing testcases in Polarion and add them to testrun
     if not args.no_submit and filtered_testcases:
-        nargs = vars(args)
-        msgbus_log = 'msgbus-testcases-{}.log'.format(_get_filename_str())
-        msgbus_log = os.path.join(args.output_dir or 'log', msgbus_log)
-        nargs['msgbus_log'] = msgbus_log if args.output_dir else None
+        nargs = {}
+        nargs.update(vars(args))
+        msgbus_log = None
+        if args.output_dir:
+            msgbus_log = 'msgbus-testcases-{}.log'.format(_get_filename_str())
+            msgbus_log = os.path.join(args.output_dir, msgbus_log)
+        nargs['msgbus_log'] = msgbus_log
         if not submit_and_verify(filtered_testcases, config=dump2polarion_config, **nargs):
             logger.fatal("Failed to submit new testcases")
             return 1
 
-        msgbus_log = 'msgbus-testrun-{}.log'.format(_get_filename_str())
-        msgbus_log = os.path.join(args.output_dir or 'log', msgbus_log)
-        nargs['msgbus_log'] = msgbus_log if args.output_dir else None
+        msgbus_log = None
+        if args.output_dir:
+            msgbus_log = 'msgbus-testrun-{}.log'.format(_get_filename_str())
+            msgbus_log = os.path.join(args.output_dir, msgbus_log)
+        nargs['msgbus_log'] = msgbus_log
         if not submit_and_verify(filtered_testsuites, config=dump2polarion_config, **nargs):
             logger.fatal(
                 "Failed to submit new testcases into testrun {}".format(args.testrun_id or ''))

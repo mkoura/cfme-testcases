@@ -62,6 +62,7 @@ def run_pytest(testrun_id):
         '-qq',
         '--collect-only',
         '--long-running',
+        '--perf',
         '--use-provider', 'complete',
         '--generate-legacy-xmls',
         '--xmls-testrun-id',

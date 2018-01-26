@@ -6,3 +6,7 @@ Exception.
 
 class TestcasesException(Exception):
     """testcases exception."""
+
+
+class NothingToDoException(TestcasesException):
+    """nothing to do exception."""

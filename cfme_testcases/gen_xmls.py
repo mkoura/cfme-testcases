@@ -4,13 +4,12 @@
 Run pytest --collect-only and generate XMLs.
 """
 
-from __future__ import unicode_literals, absolute_import
+from __future__ import absolute_import, unicode_literals
 
-import os
-import sys
 import logging
-
-from contextlib import contextmanager
+import os
+import subprocess
+import sys
 
 from cfme_testcases.exceptions import TestcasesException
 
@@ -39,19 +38,6 @@ def _cleanup():
             pass
 
 
-@contextmanager
-def _silence_output():
-    new_target = open(os.devnull, 'w')
-    old_target, sys.stdout = sys.stdout, new_target
-    old_log_level = logging.getLogger().getEffectiveLevel()
-    logging.getLogger().setLevel(logging.ERROR)
-    try:
-        yield new_target
-    finally:
-        sys.stdout = old_target
-        logging.getLogger().setLevel(old_log_level)
-
-
 def run_pytest(testrun_id):
     """Runs the pytest command."""
     pytest_retval = None
@@ -59,6 +45,7 @@ def run_pytest(testrun_id):
     _cleanup()
 
     args = [
+        'miq-runtest',
         '-qq',
         '--collect-only',
         '--long-running',
@@ -69,10 +56,19 @@ def run_pytest(testrun_id):
         str(testrun_id)
     ]
 
-    import pytest
-    logger.info("Generating the XMLs using 'pytest {}'".format(' '.join(args)))
-    with _silence_output():
-        pytest_retval = pytest.main(args)
+    logger.info("Generating the XMLs using '{}'".format(' '.join(args)))
+    with open(os.devnull, 'w') as devnull:
+        pytest_proc = subprocess.Popen(args, stdout=devnull, stderr=devnull)
+        try:
+            pytest_retval = pytest_proc.wait()
+        # pylint: disable=broad-except
+        except Exception:
+            try:
+                pytest_proc.terminate()
+            except OSError:
+                pass
+            pytest_proc.wait()
+            return
 
     missing_files = []
     for fname in _XML_FILES:

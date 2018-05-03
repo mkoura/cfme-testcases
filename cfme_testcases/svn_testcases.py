@@ -73,7 +73,7 @@ class WorkItemCache(object):
 
         tree = self.get_tree(work_item_id)
         if not tree:
-            return
+            return None
 
         for item in tree.xpath('/work-item/field'):
             self._cache[work_item_id][item.attrib['id']] = item.text

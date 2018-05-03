@@ -19,7 +19,7 @@ FilteredXMLs = namedtuple('FilteredXMLs', 'missing_testcases missing_testsuites 
 def get_missing_testcases(testcases_file, missing):
     """Gets testcases missing in Polarion."""
     if not missing:
-        return
+        return None
 
     xml_root = utils.get_xml_root(testcases_file)
 
@@ -43,7 +43,7 @@ def get_missing_testcases(testcases_file, missing):
 def get_missing_testsuites(testsuite_file, missing):
     """Gets testcases missing in testrun."""
     if not missing:
-        return
+        return None
 
     xml_root = utils.get_xml_root(testsuite_file)
 

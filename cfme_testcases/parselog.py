@@ -24,7 +24,7 @@ def get_work_item(line):
     try:
         return (res.group(1), res.group(2))
     except (AttributeError, IndexError):
-        return
+        return None
 
 
 def get_warn_item(line):
@@ -33,7 +33,7 @@ def get_warn_item(line):
     try:
         return res.group(1)
     except (AttributeError, IndexError):
-        return
+        return None
 
 
 def get_test_case(line):
@@ -42,7 +42,7 @@ def get_test_case(line):
     try:
         return (res.group(1), res.group(2))
     except (AttributeError, IndexError):
-        return
+        return None
 
 
 def get_test_case_warn(line):
@@ -51,7 +51,7 @@ def get_test_case_warn(line):
     try:
         return res.group(1)
     except (AttributeError, IndexError):
-        return
+        return None
 
 
 def parse_xunit(log_file):

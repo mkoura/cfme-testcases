@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=too-few-public-methods
 """
 Testcases data from Polarion SVN repo.
 """
@@ -13,11 +12,14 @@ from collections import defaultdict
 
 from lxml import etree
 
+from cfme_testcases.exceptions import TestcasesException
+
 
 # pylint: disable=invalid-name
 logger = logging.getLogger(__name__)
 
 
+# pylint: disable=too-few-public-methods
 class InvalidObject(object):
     """Item not present or it's not testcase."""
     pass
@@ -32,7 +34,7 @@ class WorkItemCache(object):
 
     @staticmethod
     def get_path(num):
-        """Gets a path from the workitem number
+        """Gets a path from the workitem number.
 
         For example: 31942 will return 30000-39999/31000-31999/31900-31999
         """
@@ -145,6 +147,13 @@ class PolarionTestcases(object):
 def get_missing(repo_dir, testcase_names):
     """Gets set of testcases missing in Polarion."""
     polarion_testcases = PolarionTestcases(repo_dir)
-    polarion_testcases.load_active_testcases()
+    try:
+        polarion_testcases.load_active_testcases()
+    except Exception as err:
+        raise TestcasesException(
+            'Failed to load testcases from SVN repo {}: {}'.format(repo_dir, err))
+    if not polarion_testcases:
+        raise TestcasesException(
+            'No testcases loaded from SVN repo {}'.format(repo_dir))
     missing = set(testcase_names) - set(polarion_testcases)
     return missing

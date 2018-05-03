@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=logging-format-interpolation
 """
 Run pytest --collect-only and generate XMLs.
 """
@@ -24,10 +23,10 @@ _XML_FILES = ('test_case_import.xml', 'test_run_import.xml')
 def _check_environment():
     # check that launched in integration tests repo
     if not os.path.exists('cfme/tests'):
-        raise TestcasesException("Not running in the integration tests repo")
+        raise TestcasesException('Not running in the integration tests repo')
     # check that running in virtualenv
     if not hasattr(sys, 'real_prefix'):
-        raise TestcasesException("Not running in virtual environment")
+        raise TestcasesException('Not running in virtual environment')
 
 
 def _cleanup():
@@ -50,13 +49,14 @@ def run_pytest(testrun_id):
         '--collect-only',
         '--long-running',
         '--perf',
+        '--runxfail',
         '--use-provider', 'complete',
         '--generate-legacy-xmls',
         '--xmls-testrun-id',
         str(testrun_id)
     ]
 
-    logger.info("Generating the XMLs using '{}'".format(' '.join(args)))
+    logger.info("Generating the XMLs using '%s'", ' '.join(args))
     with open(os.devnull, 'w') as devnull:
         pytest_proc = subprocess.Popen(args, stdout=devnull, stderr=devnull)
         try:
@@ -68,7 +68,7 @@ def run_pytest(testrun_id):
             except OSError:
                 pass
             pytest_proc.wait()
-            return
+            return None
 
     missing_files = []
     for fname in _XML_FILES:
@@ -76,6 +76,6 @@ def run_pytest(testrun_id):
             missing_files.append(fname)
     if missing_files:
         raise TestcasesException(
-            "The XML files '{}' were not generated".format(' and '.join(missing_files)))
+            'The XML files {} were not generated'.format(' and '.join(missing_files)))
 
     return pytest_retval

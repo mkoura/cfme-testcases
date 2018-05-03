@@ -1,36 +1,31 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=logging-format-interpolation
 """
 Filter missing testcases and testcases for update.
 """
 
 from __future__ import absolute_import, unicode_literals
 
-import logging
 import os
 
 from collections import namedtuple
 
-from cfme_testcases import parselog, utils
+from cfme_testcases import utils
 from cfme_testcases.exceptions import TestcasesException
 
-
-# pylint: disable=invalid-name
-logger = logging.getLogger(__name__)
 
 FilteredXMLs = namedtuple('FilteredXMLs', 'missing_testcases missing_testsuites updated_testcases')
 
 
-def get_missing_testcases(testcase_file, missing):
+def get_missing_testcases(testcases_file, missing):
     """Gets testcases missing in Polarion."""
     if not missing:
         return
 
-    xml_root = utils.get_xml_root(testcase_file)
+    xml_root = utils.get_xml_root(testcases_file)
 
     if xml_root.tag != 'testcases':
         raise TestcasesException(
-            "XML file '{}' is not in expected format".format(testcase_file))
+            "XML file '{}' is not in expected format".format(testcases_file))
 
     utils.remove_response_property(xml_root)
 
@@ -76,16 +71,16 @@ def get_missing_testsuites(testsuite_file, missing):
     return xml_root
 
 
-def get_updated_testcases(testcase_file, missing):
+def get_updated_testcases(testcases_file, missing):
     """Gets testcases that will be updated in Polarion."""
     if missing is None:
         missing = []
 
-    xml_root = utils.get_xml_root(testcase_file)
+    xml_root = utils.get_xml_root(testcases_file)
 
     if xml_root.tag != 'testcases':
         raise TestcasesException(
-            "XML file '{}' is not in expected format".format(testcase_file))
+            "XML file '{}' is not in expected format".format(testcases_file))
 
     utils.remove_response_property(xml_root)
     utils.set_lookup_method(xml_root, 'name')
@@ -103,17 +98,14 @@ def get_updated_testcases(testcase_file, missing):
         cfields_instances = cfields_parent.findall('custom-field')
         for field in cfields_instances:
             field_id = field.get('id')
-            if field_id not in ('automation_script',):
+            if field_id not in ('automation_script', 'caseautomation'):
                 cfields_parent.remove(field)
 
     return xml_root
 
 
-def get_filtered_xmls(testcases_xml, testsuites_xml, job_log):
+def get_filtered_xmls(testcases_xml, testsuites_xml, missing):
     """Returns modified XMLs with testcases and testsuites."""
-    import_outcome = parselog.parse(os.path.expanduser(job_log))
-    missing = set(import_outcome['not_found'])
-
     missing_testcases = get_missing_testcases(os.path.expanduser(testcases_xml), missing)
     missing_testsuites = get_missing_testsuites(os.path.expanduser(testsuites_xml), missing)
     updated_testcases = get_updated_testcases(os.path.expanduser(testcases_xml), missing)

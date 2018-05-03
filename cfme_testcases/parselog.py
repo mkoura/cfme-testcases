@@ -121,3 +121,9 @@ def parse(log_file):
     if not handler:
         raise TestcasesException("No valid data found in the log file '{}'".format(log_file))
     return handler(log_file)
+
+
+def get_missing(log_file):
+    """Gets set of testcases missing in Polarion."""
+    import_outcome = parse(os.path.expanduser(log_file))
+    return set(import_outcome['not_found'])

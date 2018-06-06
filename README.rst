@@ -1,4 +1,4 @@
-cfme_testcases
+Moved to https://gitlab.com/mkourim/cfme-testcases
 ==============
 
 Usage
